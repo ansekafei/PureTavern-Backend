@@ -3,17 +3,25 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-# The Worker holds no state: no KV, D1 or R2 binding is needed. Everything the proxy needs arrives in
-# the request envelope, and the only configuration is the access key plus the optional origin list.
+# The proxy surface is stateless. The optional sync vault is the only state, and it lives entirely in
+# R2 as opaque ciphertext — the Worker never holds a key that can read it.
+
+[[r2_buckets]]
+binding = "PURE_TAVERN_SYNC_BUCKET"
+bucket_name = "pure-tavern-sync"
 
 [vars]
 # Empty means "accept any origin". In production set a comma-separated allowlist of your own PureTavern
 # deployment origins, e.g. "https://pure-tavern.pages.dev,https://tavern.example.com".
-PURE_TAVERN_ALLOWED_ORIGINS = "https://pure-tavern-8fb.pages.dev"
+PURE_TAVERN_ALLOWED_ORIGINS = "https://puretavern-app.pages.dev,https://pure-tavern-web.pages.dev,https://pt.20050306.xyz,http://localhost:5173,http://localhost:4173"
 
 # The access key is NOT in this file on purpose. Set it once per environment:
 #   wrangler secret put PURE_TAVERN_PROXY_KEY
 # For `wrangler dev`, put it in .dev.vars (git-ignored) instead.
+#
+# The sync vault also needs a session signing secret:
+#   wrangler secret put PURE_TAVERN_SYNC_SECRET
+# Rotating it logs every device out but does not touch the stored ciphertext.
 
 [observability]
 enabled = true

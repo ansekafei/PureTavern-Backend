@@ -24,12 +24,17 @@ import {
   UpstreamProxyError,
   validateEnvelope,
 } from './protocol';
+import { handleSyncRoute } from './sync/routes';
 
 export interface Env {
   /** Required. Bearer access key the frontend must present. Set with `wrangler secret put`. */
   PURE_TAVERN_PROXY_KEY: string;
   /** Optional. Comma-separated origin allowlist; empty or `*` allows any origin. */
   PURE_TAVERN_ALLOWED_ORIGINS?: string;
+  /** Required for `/v1/sync/*`. HMAC key for session tokens; rotating it logs every device out. */
+  PURE_TAVERN_SYNC_SECRET?: string;
+  /** Required for `/v1/sync/*`. Holds account records and encrypted archives. */
+  PURE_TAVERN_SYNC_BUCKET?: R2Bucket;
 }
 
 const HEALTH_BODY = {
@@ -42,16 +47,26 @@ const HEALTH_BODY = {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const allowedOrigins = parseAllowedOrigins(env.PURE_TAVERN_ALLOWED_ORIGINS);
+    const url = new URL(request.url);
+    const isSyncRoute = url.pathname.startsWith('/v1/sync/');
+
     const cors = buildCorsHeaders(request, {
       allowedOrigins,
       proxyHeaderName: PROXY_HEADER,
       proxyErrorHeaderName: PROXY_ERROR_HEADER,
+      // The vault needs PUT/DELETE; the proxy contract stays GET/POST only.
+      allowMethods: isSyncRoute ? 'GET, PUT, DELETE, OPTIONS' : 'GET, POST, OPTIONS',
     });
-
-    const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
       return withCors(new Response(null, { status: 200 }), cors);
+    }
+
+    // The sync vault authenticates with its own session tokens, so it is dispatched before the proxy
+    // key check — otherwise a deployment that only wants sync would have to set an unrelated secret.
+    if (isSyncRoute) {
+      const response = await handleSyncRoute({ request, url, env, cors });
+      if (response) return withCors(response, cors);
     }
 
     // A missing secret is a deployment error, not a client error. Fail closed with 500 and say so,

@@ -51,6 +51,8 @@ export interface CorsHeadersInit {
   allowedOrigins: string[];
   proxyHeaderName: string;
   proxyErrorHeaderName: string;
+  /** Defaults to the proxy surface's `GET, POST, OPTIONS`. The sync vault adds PUT and DELETE. */
+  allowMethods?: string;
 }
 
 /**
@@ -59,7 +61,12 @@ export interface CorsHeadersInit {
  */
 export function buildCorsHeaders(
   request: Request,
-  { allowedOrigins, proxyHeaderName, proxyErrorHeaderName }: CorsHeadersInit,
+  {
+    allowedOrigins,
+    proxyHeaderName,
+    proxyErrorHeaderName,
+    allowMethods = 'GET, POST, OPTIONS',
+  }: CorsHeadersInit,
 ): Headers {
   const headers = new Headers();
   const origin = request.headers.get('origin') ?? '';
@@ -71,7 +78,7 @@ export function buildCorsHeaders(
     headers.set('Vary', 'Origin');
   }
 
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  headers.set('Access-Control-Allow-Methods', allowMethods);
   headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   headers.set(
     'Access-Control-Expose-Headers',
