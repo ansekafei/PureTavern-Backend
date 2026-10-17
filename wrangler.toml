@@ -1,0 +1,19 @@
+name = "pure-tavern-backend"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The Worker holds no state: no KV, D1 or R2 binding is needed. Everything the proxy needs arrives in
+# the request envelope, and the only configuration is the access key plus the optional origin list.
+
+[vars]
+# Empty means "accept any origin". In production set a comma-separated allowlist of your own PureTavern
+# deployment origins, e.g. "https://pure-tavern.pages.dev,https://tavern.example.com".
+PURE_TAVERN_ALLOWED_ORIGINS = ""
+
+# The access key is NOT in this file on purpose. Set it once per environment:
+#   wrangler secret put PURE_TAVERN_PROXY_KEY
+# For `wrangler dev`, put it in .dev.vars (git-ignored) instead.
+
+[observability]
+enabled = true

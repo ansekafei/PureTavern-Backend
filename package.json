@@ -1,0 +1,24 @@
+{
+  "name": "pure-tavern-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Workers remote backend for PureTavern — pure-tavern-generation-proxy v1",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.40",
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "vitest": "~2.1.8",
+    "wrangler": "^3.95.0"
+  }
+}
