@@ -40,7 +40,9 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Workers
     needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Deployment is manual on purpose. Automatic deploy on every push needs two repository secrets
+    # that a fresh clone does not have, and a red job nobody can fix is worse than no job at all.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -56,11 +58,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Requires two repository secrets:
-      #   CLOUDFLARE_API_TOKEN  — token with the "Edit Cloudflare Workers" template
-      #   CLOUDFLARE_ACCOUNT_ID — account id from the Cloudflare dashboard URL
-      # The Worker secret PURE_TAVERN_PROXY_KEY is set once by hand and persists across deploys,
-      # so it deliberately does not appear in this workflow.
+      # Fails loudly and early instead of letting wrangler emit an opaque auth error.
+      - name: Verify Cloudflare credentials are configured
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Missing repository secrets CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID."
+            echo "Create them under Settings → Secrets and variables → Actions, then re-run this workflow."
+            exit 1
+          fi
+
+      # The Worker secret PURE_TAVERN_PROXY_KEY is set once with
+      #   wrangler secret put PURE_TAVERN_PROXY_KEY
+      # and persists across deploys, so it deliberately does not appear in this workflow.
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
