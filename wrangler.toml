@@ -9,7 +9,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # Empty means "accept any origin". In production set a comma-separated allowlist of your own PureTavern
 # deployment origins, e.g. "https://pure-tavern.pages.dev,https://tavern.example.com".
-PURE_TAVERN_ALLOWED_ORIGINS = ""
+PURE_TAVERN_ALLOWED_ORIGINS = "https://pure-tavern-8fb.pages.dev"
 
 # The access key is NOT in this file on purpose. Set it once per environment:
 #   wrangler secret put PURE_TAVERN_PROXY_KEY
